@@ -80,7 +80,11 @@ const startApp = async () => {
         addTextWatermarkToImage(
           './img/' + options.inputImage,
           './img/' + prepareOutputFilename(options.inputImage),
-          options.watermarkText
+          options.watermarkText,
+          console.log(
+            'File has been successfully generated! Check `/img` folder'
+          ),
+          startApp()
         );
       } else {
         console.log('Something went wrong... Try again');
@@ -106,7 +110,11 @@ const startApp = async () => {
         addImageWatermarkToImage(
           './img/' + options.inputImage,
           './img/' + prepareOutputFilename(options.inputImage),
-          './img/' + options.watermarkImage
+          './img/' + options.watermarkImage,
+          console.log(
+            'File has been successfully generated! Check `/img` folder'
+          ),
+          startApp()
         );
       } else {
         console.log('Something went wrong... Try again');
