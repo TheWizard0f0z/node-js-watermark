@@ -1,0 +1,8 @@
+{
+  "name": "node-js-watermark",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/TheWizard0f0z/node-js-watermark.git",
+  "author": "Marcin Dzieszkowski <m.dzieszkowski@gmail.com>",
+  "license": "MIT"
+}
