@@ -76,15 +76,17 @@ const startApp = async () => {
     ]);
     options.watermarkText = text.value;
     try {
-      if (fs.existsSync(path)) {
+      if (fs.existsSync('./img/' + options.inputImage)) {
         addTextWatermarkToImage(
           './img/' + options.inputImage,
           './img/' + prepareOutputFilename(options.inputImage),
           options.watermarkText
         );
+      } else {
+        console.log('Something went wrong... Try again');
       }
     } catch (err) {
-      console.error('Something went wrong... Try again');
+      console.error(err);
     }
   } else {
     const image = await inquirer.prompt([
@@ -97,15 +99,20 @@ const startApp = async () => {
     ]);
     options.watermarkImage = image.filename;
     try {
-      if (fs.existsSync(path)) {
+      if (
+        fs.existsSync('./img/' + options.inputImage) &&
+        fs.existsSync('./img/' + options.watermarkImage)
+      ) {
         addImageWatermarkToImage(
           './img/' + options.inputImage,
           './img/' + prepareOutputFilename(options.inputImage),
           './img/' + options.watermarkImage
         );
+      } else {
+        console.log('Something went wrong... Try again');
       }
     } catch (err) {
-      console.error('Something went wrong... Try again');
+      console.error(err);
     }
   }
 };
