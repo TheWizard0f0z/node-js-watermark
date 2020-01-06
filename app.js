@@ -37,6 +37,30 @@ const prepareOutputFilename = filename => {
   return `${name}-with-watermark.${ext}`;
 };
 
+const makeImageBrighter = async function(inputFile, outputFile) {
+  const image = await Jimp.read(inputFile);
+
+  image.brightness(0.1).write(outputFile);
+};
+
+const increaseContrast = async function(inputFile, outputFile) {
+  const image = await Jimp.read(inputFile);
+
+  image.contrast(0.1).write(outputFile);
+};
+
+const makeImageGreyscale = async function(inputFile, outputFile) {
+  const image = await Jimp.read(inputFile);
+
+  image.greyscale().write(outputFile);
+};
+
+const invertImage = async function(inputFile, outputFile) {
+  const image = await Jimp.read(inputFile);
+
+  image.invert().write(outputFile);
+};
+
 const startApp = async () => {
   // Ask if user is ready
   const answer = await inquirer.prompt([
@@ -60,13 +84,58 @@ const startApp = async () => {
       default: 'test.jpg'
     },
     {
+      name: 'editImage',
+      message: 'Do you want to edit the selected file?',
+      type: 'confirm'
+    }
+  ]);
+
+  if (options.editImage) {
+    const editChoices = await inquirer.prompt([
+      {
+        name: 'choicesList',
+        type: 'list',
+        choices: [
+          'Make image brighter',
+          'Increase contrast',
+          'Make image b&w',
+          'Invert image'
+        ]
+      }
+    ]);
+
+    if (editChoices.choicesList === 'Make image brighter') {
+      makeImageBrighter(
+        './img/' + options.inputImage,
+        './img/' + prepareOutputFilename(options.inputImage)
+      );
+    } else if (editChoices.choicesList === 'Increase contrast') {
+      increaseContrast(
+        './img/' + options.inputImage,
+        './img/' + prepareOutputFilename(options.inputImage)
+      );
+    } else if (editChoices.choicesList === 'Make image b&w') {
+      makeImageGreyscale(
+        './img/' + options.inputImage,
+        './img/' + prepareOutputFilename(options.inputImage)
+      );
+    } else if (editChoices.choicesList === 'Invert image') {
+      invertImage(
+        './img/' + options.inputImage,
+        './img/' + prepareOutputFilename(options.inputImage)
+      );
+    }
+  }
+
+  const options2 = await inquirer.prompt([
+    {
       name: 'watermarkType',
       type: 'list',
       choices: ['Text watermark', 'Image watermark']
     }
   ]);
 
-  if (options.watermarkType === 'Text watermark') {
+  if (options2.watermarkType === 'Text watermark') {
     const text = await inquirer.prompt([
       {
         name: 'value',
