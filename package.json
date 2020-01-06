@@ -4,5 +4,8 @@
   "main": "index.js",
   "repository": "https://github.com/TheWizard0f0z/node-js-watermark.git",
   "author": "Marcin Dzieszkowski <m.dzieszkowski@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "jimp": "0.6.4"
+  }
 }
