@@ -2,44 +2,8 @@ const Jimp = require('jimp');
 const inquirer = require('inquirer');
 const fs = require('fs');
 
-const addTextWatermarkToImage = async function(inputFile, outputFile, text) {
-  const image = await Jimp.read(inputFile);
-  const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
-  const textData = {
-    text,
-    alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
-    alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
-  };
-
-  image.print(font, 0, 0, textData, image.getWidth(), image.getHeight());
-  image.quality(100).write(outputFile);
-};
-
-const addImageWatermarkToImage = async function(
-  inputFile,
-  outputFile,
-  watermarkFile
-) {
-  const image = await Jimp.read(inputFile);
-  const watermark = await Jimp.read(watermarkFile);
-  const x = image.getWidth() / 2 - watermark.getWidth() / 2;
-  const y = image.getHeight() / 2 - watermark.getHeight() / 2;
-
-  image.composite(watermark, x, y, {
-    mode: Jimp.BLEND_SOURCE_OVER,
-    opacitySource: 0.5
-  });
-  image.quality(100).write(outputFile);
-};
-
-const prepareOutputFilename = filename => {
-  const [name, ext] = filename.split('.');
-  return `${name}-with-watermark.${ext}`;
-};
-
 const makeImageBrighter = async function(inputFile, outputFile) {
   const image = await Jimp.read(inputFile);
-
   image.brightness(0.1).write(outputFile);
 };
 
@@ -61,6 +25,45 @@ const invertImage = async function(inputFile, outputFile) {
   image.invert().write(outputFile);
 };
 
+const addTextWatermarkToImage = async function(inputFile, outputFile, text) {
+  const image = await Jimp.read(inputFile);
+  const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
+  const textData = {
+    text,
+    alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+    alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
+  };
+
+  image.print(font, 0, 0, textData, image.getWidth(), image.getHeight());
+  image.quality(100).write(outputFile);
+  console.log('File has been successfully generated! Check `/img` folder');
+  startApp();
+};
+
+const addImageWatermarkToImage = async function(
+  inputFile,
+  outputFile,
+  watermarkFile
+) {
+  const image = await Jimp.read(inputFile);
+  const watermark = await Jimp.read(watermarkFile);
+  const x = image.getWidth() / 2 - watermark.getWidth() / 2;
+  const y = image.getHeight() / 2 - watermark.getHeight() / 2;
+
+  image.composite(watermark, x, y, {
+    mode: Jimp.BLEND_SOURCE_OVER,
+    opacitySource: 0.5
+  });
+  image.quality(100).write(outputFile);
+  console.log('File has been successfully generated! Check `/img` folder');
+  startApp();
+};
+
+const prepareOutputFilename = filename => {
+  const [name, ext] = filename.split('.');
+  return `${name}-with-watermark.${ext}`;
+};
+
 const startApp = async () => {
   // Ask if user is ready
   const answer = await inquirer.prompt([
@@ -75,7 +78,7 @@ const startApp = async () => {
   // if answer is no, just quit the app
   if (!answer.start) process.exit();
 
-  // ask about input file and watermark type
+  // ask about input file and editing option
   const options = await inquirer.prompt([
     {
       name: 'inputImage',
@@ -90,6 +93,13 @@ const startApp = async () => {
     }
   ]);
 
+  // already edited file
+  const editedImage = prepareOutputFilename(options.inputImage);
+
+  // flag if the file is being edited
+  let edited = true;
+
+  // choosing file editing options
   if (options.editImage) {
     const editChoices = await inquirer.prompt([
       {
@@ -105,28 +115,17 @@ const startApp = async () => {
     ]);
 
     if (editChoices.choicesList === 'Make image brighter') {
-      makeImageBrighter(
-        './img/' + options.inputImage,
-        './img/' + prepareOutputFilename(options.inputImage)
-      );
+      makeImageBrighter('./img/' + options.inputImage, './img/' + editedImage);
     } else if (editChoices.choicesList === 'Increase contrast') {
-      increaseContrast(
-        './img/' + options.inputImage,
-        './img/' + prepareOutputFilename(options.inputImage)
-      );
+      increaseContrast('./img/' + options.inputImage, './img/' + editedImage);
     } else if (editChoices.choicesList === 'Make image b&w') {
-      makeImageGreyscale(
-        './img/' + options.inputImage,
-        './img/' + prepareOutputFilename(options.inputImage)
-      );
+      makeImageGreyscale('./img/' + options.inputImage, './img/' + editedImage);
     } else if (editChoices.choicesList === 'Invert image') {
-      invertImage(
-        './img/' + options.inputImage,
-        './img/' + prepareOutputFilename(options.inputImage)
-      );
+      invertImage('./img/' + options.inputImage, './img/' + editedImage);
     }
   }
 
+  // ask about watermark type
   const options2 = await inquirer.prompt([
     {
       name: 'watermarkType',
@@ -135,6 +134,7 @@ const startApp = async () => {
     }
   ]);
 
+  // ask about watermark text/watermark image and paste it into the file
   if (options2.watermarkType === 'Text watermark') {
     const text = await inquirer.prompt([
       {
@@ -144,16 +144,13 @@ const startApp = async () => {
       }
     ]);
     options.watermarkText = text.value;
+    const imagePatch = edited ? editedImage : options.inputImage;
     try {
-      if (fs.existsSync('./img/' + options.inputImage)) {
+      if (fs.existsSync('./img/' + imagePatch)) {
         addTextWatermarkToImage(
-          './img/' + options.inputImage,
-          './img/' + prepareOutputFilename(options.inputImage),
-          options.watermarkText,
-          console.log(
-            'File has been successfully generated! Check `/img` folder'
-          ),
-          startApp()
+          './img/' + imagePatch,
+          './img/' + imagePatch,
+          options.watermarkText
         );
       } else {
         console.log('Something went wrong... Try again');
@@ -171,19 +168,16 @@ const startApp = async () => {
       }
     ]);
     options.watermarkImage = image.filename;
+    const imagePatch = edited ? editedImage : options.inputImage;
     try {
       if (
-        fs.existsSync('./img/' + options.inputImage) &&
+        fs.existsSync('./img/' + imagePatch) &&
         fs.existsSync('./img/' + options.watermarkImage)
       ) {
         addImageWatermarkToImage(
-          './img/' + options.inputImage,
-          './img/' + prepareOutputFilename(options.inputImage),
-          './img/' + options.watermarkImage,
-          console.log(
-            'File has been successfully generated! Check `/img` folder'
-          ),
-          startApp()
+          './img/' + imagePatch,
+          './img/' + imagePatch,
+          './img/' + options.watermarkImage
         );
       } else {
         console.log('Something went wrong... Try again');
