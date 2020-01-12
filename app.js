@@ -5,49 +5,41 @@ const fs = require('fs');
 const makeImageBrighter = async function(inputFile, outputFile) {
   const image = await Jimp.read(inputFile);
 
-  image.brightness(0.1).write(outputFile);
+  const saved = image.brightness(0.1).writeAsync(outputFile);
 
-  async function succes() {
-    await image.writeAsync(outputFile);
-    console.log('File has been successfully edited!');
-  }
-  succes();
+  console.log('File has been successfully edited!');
+
+  return saved;
 };
 
 const increaseContrast = async function(inputFile, outputFile) {
   const image = await Jimp.read(inputFile);
 
-  image.contrast(0.1).write(outputFile);
+  const saved = image.contrast(0.1).writeAsync(outputFile);
 
-  async function succes() {
-    await image.writeAsync(outputFile);
-    console.log('File has been successfully edited!');
-  }
-  succes();
+  console.log('File has been successfully edited!');
+
+  return saved;
 };
 
 const makeImageGreyscale = async function(inputFile, outputFile) {
   const image = await Jimp.read(inputFile);
 
-  image.greyscale().write(outputFile);
+  const saved = image.greyscale().writeAsync(outputFile);
 
-  async function succes() {
-    await image.writeAsync(outputFile);
-    console.log('File has been successfully edited!');
-  }
-  succes();
+  console.log('File has been successfully edited!');
+
+  return saved;
 };
 
 const invertImage = async function(inputFile, outputFile) {
   const image = await Jimp.read(inputFile);
 
-  image.invert().write(outputFile);
+  const saved = image.invert().writeAsync(outputFile);
 
-  async function succes() {
-    await image.writeAsync(outputFile);
-    console.log('File has been successfully edited!');
-  }
-  succes();
+  console.log('File has been successfully edited!');
+
+  return saved;
 };
 
 const addTextWatermarkToImage = async function(inputFile, outputFile, text) {
@@ -62,16 +54,10 @@ const addTextWatermarkToImage = async function(inputFile, outputFile, text) {
   image.print(font, 0, 0, textData, image.getWidth(), image.getHeight());
   image.quality(100).write(outputFile);
 
-  async function succes() {
-    await image.writeAsync(outputFile);
-    console.log('File has been successfully generated! Check `/img` folder');
-  }
+  await image.writeAsync(outputFile);
+  console.log('File has been successfully generated! Check `/img` folder');
 
-  async function restartApp() {
-    await succes();
-    startApp();
-  }
-  restartApp();
+  startApp();
 };
 
 const addImageWatermarkToImage = async function(
@@ -90,24 +76,16 @@ const addImageWatermarkToImage = async function(
   });
   image.quality(100).write(outputFile);
 
-  async function succes() {
-    await image.writeAsync(outputFile);
-    console.log('File has been successfully generated! Check `/img` folder');
-  }
+  await image.writeAsync(outputFile);
+  console.log('File has been successfully generated! Check `/img` folder');
 
-  async function restartApp() {
-    await succes();
-    startApp();
-  }
-  restartApp();
+  startApp();
 };
 
-/*
 const prepareOutputEditedFilename = filename => {
   const [name, ext] = filename.split('.');
   return `${name}-edited.${ext}`;
 };
-*/
 
 const prepareOutputFilename = filename => {
   const [name, ext] = filename.split('.');
@@ -147,13 +125,14 @@ const startApp = async () => {
   const uneditedImage = options.inputImage;
 
   // already edited file
-  const editedImage = prepareOutputFilename(options.inputImage);
+  const editedImage = prepareOutputEditedFilename(options.inputImage);
 
-  // flag if the file is being edited
+  // default file flag
   let edited = false;
 
   // choosing file editing options
   if (options.editImage) {
+    edited = true;
     const editChoices = await inquirer.prompt([
       {
         name: 'choicesList',
@@ -168,17 +147,19 @@ const startApp = async () => {
     ]);
 
     if (editChoices.choicesList === 'Make image brighter') {
-      makeImageBrighter('./img/' + uneditedImage, './img/' + editedImage);
+      await makeImageBrighter('./img/' + uneditedImage, './img/' + editedImage);
     } else if (editChoices.choicesList === 'Increase contrast') {
-      increaseContrast('./img/' + uneditedImage, './img/' + editedImage);
+      await increaseContrast('./img/' + uneditedImage, './img/' + editedImage);
     } else if (editChoices.choicesList === 'Make image b&w') {
-      makeImageGreyscale('./img/' + uneditedImage, './img/' + editedImage);
+      await makeImageGreyscale(
+        './img/' + uneditedImage,
+        './img/' + editedImage
+      );
     } else if (editChoices.choicesList === 'Invert image') {
-      invertImage('./img/' + uneditedImage, './img/' + editedImage);
+      await invertImage('./img/' + uneditedImage, './img/' + editedImage);
     }
   }
 
-  // ask about watermark type
   const options2 = await inquirer.prompt([
     {
       name: 'watermarkType',
@@ -197,7 +178,9 @@ const startApp = async () => {
       }
     ]);
     options.watermarkText = text.value;
-    const imagePath = edited ? editedImage : uneditedImage;
+
+    let imagePath = edited ? editedImage : uneditedImage;
+
     try {
       if (fs.existsSync('./img/' + imagePath)) {
         addTextWatermarkToImage(
@@ -221,7 +204,9 @@ const startApp = async () => {
       }
     ]);
     options.watermarkImage = image.filename;
-    const imagePath = edited ? editedImage : uneditedImage;
+
+    let imagePath = edited ? editedImage : uneditedImage;
+
     try {
       if (
         fs.existsSync('./img/' + imagePath) &&
